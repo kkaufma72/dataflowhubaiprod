@@ -14,7 +14,9 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose }) =>
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { setCurrentProject } = useMLContext();
+  const { setCurrentProject, createNewProject } = useMLContext();
+
+  const MAX_NAME_LENGTH = 50; // Define the maximum length for project names
 
   if (!isOpen) return null;
 
@@ -29,23 +31,18 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose }) =>
     try {
       setIsSubmitting(true);
       
-      // Create a new project
-      const newProject = {
-        id: `project-${Date.now()}`,
-        name: projectName,
-        description: projectDescription,
-        createdAt: new Date().toISOString()
-      };
+      // Call the context function to create the project in Supabase
+      const newProjectFromDb = await createNewProject(projectName, projectDescription);
       
-      // In a real implementation, this would call an API to create the project
-      // For now, we'll just set it as the current project
-      setCurrentProject(newProject);
-      
-      toast.success('Project created successfully');
-      onClose();
+      if (newProjectFromDb) {
+        setCurrentProject(newProjectFromDb); // Set the project returned from DB
+        toast.success('Project created successfully');
+        setProjectName(''); // Reset form
+        setProjectDescription(''); // Reset form
+        onClose();
+      }
     } catch (error) {
-      console.error('Error creating project:', error);
-      toast.error('Failed to create project');
+      console.error('Error creating project from modal:', error);
     } finally {
       setIsSubmitting(false);
     }

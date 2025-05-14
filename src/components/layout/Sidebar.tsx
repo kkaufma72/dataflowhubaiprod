@@ -136,9 +136,9 @@ const Sidebar = () => {
                               className={({ isActive }) =>
                                 `${
                                   isActive
-                                    ? 'bg-indigo-800 text-white dark:bg-gray-800'
-                                    : 'text-indigo-100 hover:bg-indigo-600 hover:text-white dark:hover:bg-gray-800'
-                                } group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors duration-150`
+                                    ? 'bg-indigo-900 text-white dark:bg-gray-700'
+                                    : 'text-indigo-100 hover:bg-indigo-600 hover:text-white dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white'
+                                } group flex items-center px-3 py-2 text-sm font-medium rounded-md sidebar-nav-item`
                               }
                             >
                               {({ isActive }) => (

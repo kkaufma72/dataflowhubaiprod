@@ -97,6 +97,16 @@ export interface PreprocessingStep {
   };
 }
 
+export interface PreprocessingRecommendation {
+  type: 'missing_values' | 'scaling' | 'encoding' | 'outlier_handling' | 'feature_selection' | 'custom';
+  column?: string; // Specific column or global
+  description: string;
+  suggestedMethod: string;
+  parameters?: Record<string, any>; // e.g., { strategy: 'median' } for imputation
+  rationale?: string; // Explanation why this is recommended
+  impact: 'high' | 'medium' | 'low';
+}
+
 export interface MLModel {
   id: string;
   name: string;

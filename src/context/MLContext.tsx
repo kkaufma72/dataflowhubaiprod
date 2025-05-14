@@ -15,6 +15,7 @@ interface MLContextType {
   addDataset: (dataset: Dataset) => Promise<Dataset>;
   addModel: (model: MLModel) => void;
   updateModelStatus: (id: string, status: string, metrics?: Record<string, number>) => void;
+  createNewProject: (name: string, description: string) => Promise<Project>;
 }
 
 const MLContext = createContext<MLContextType | undefined>(undefined);
@@ -397,6 +398,28 @@ export const MLProvider = ({ children }: MLProviderProps) => {
     }
   };
 
+  const createNewProject = async (name: string, description: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) {
+      toast.error('You must be logged in to create a project.');
+      throw new Error('User not authenticated');
+    }
+    const userId = session.user.id;
+
+    const { data: newProject, error } = await supabase
+      .from('projects')
+      .insert([{ name, description, user_id: userId }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating new project in Supabase:', error);
+      toast.error(`Failed to create project: ${error.message}`);
+      throw error;
+    }
+    return newProject as Project;
+  };
+
   return (
     <MLContext.Provider
       value={{
@@ -409,6 +432,7 @@ export const MLProvider = ({ children }: MLProviderProps) => {
         addDataset,
         addModel,
         updateModelStatus,
+        createNewProject,
       }}
     >
       {children}

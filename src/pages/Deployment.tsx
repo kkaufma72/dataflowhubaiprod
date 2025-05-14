@@ -13,7 +13,8 @@ import {
   Globe,
   Key,
   Eye,
-  Download
+  Download,
+  Settings
 } from 'lucide-react';
 import { useMLContext } from '../context/MLContext';
 import Button from '../components/common/Button';
@@ -22,6 +23,8 @@ import { MLModel, DeploymentConfig } from '../types';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import DeploymentStatusMonitor from '../components/monitoring/DeploymentStatusMonitor';
+
+const COST_PER_INSTANCE_MONTHLY = 50; // Example: $50 per instance/month
 
 const Deployment: React.FC = () => {
   const { models, updateModelStatus } = useMLContext();
@@ -42,6 +45,8 @@ const Deployment: React.FC = () => {
     },
     authentication: 'api_key',
   });
+  const [estimatedCost, setEstimatedCost] = useState<number>(0); // New state for estimated cost
+  const [deploymentMode, setDeploymentMode] = useState<'simple' | 'advanced'>('simple'); // New state for deployment mode
 
   const deployedModels = models.filter((model) => model.status === 'deployed');
   const deployableModels = models.filter(
@@ -75,6 +80,19 @@ const Deployment: React.FC = () => {
     }
   }, [modelId, models, selectedModel, deployableModels, deployedModels, deploymentConfig]);
 
+  useEffect(() => {
+    if (deploymentConfig && deploymentConfig.scalingOptions) {
+      const { minInstances, maxInstances } = deploymentConfig.scalingOptions;
+      if (typeof minInstances === 'number' && typeof maxInstances === 'number') {
+        const avgInstances = (minInstances + maxInstances) / 2;
+        const cost = avgInstances * COST_PER_INSTANCE_MONTHLY;
+        setEstimatedCost(cost);
+      } else {
+        setEstimatedCost(0);
+      }
+    }
+  }, [deploymentConfig]);
+
   const handleModelSelect = (modelId: string) => {
     const model = models.find((m) => m.id === modelId);
     if (model) {
@@ -92,6 +110,17 @@ const Deployment: React.FC = () => {
     setIsDeploying(true);
     setDeployProgress(0);
     setDeploymentId(`deploy-${Date.now()}`);
+
+    // Apply default settings if in simple mode
+    const configToDeploy = deploymentMode === 'simple' ? {
+      modelId: selectedModel.id,
+      endpoint: 'api/predict',
+      scalingOptions: {
+        minInstances: 1,
+        maxInstances: 1, // Default to a single instance in simple mode
+      },
+      authentication: 'api_key',
+    } : deploymentConfig;
 
     // Simulate deployment progress
     const interval = setInterval(() => {
@@ -482,143 +511,212 @@ print(prediction)`;
 
                 {selectedModel.status !== 'deployed' && !isDeploying && (
                   <>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-700">Deployment Configuration</h4>
-                      <div className="mt-2 space-y-4">
-                        <div>
-                          <label
-                            htmlFor="endpoint"
-                            className="block text-xs font-medium text-gray-500"
-                          >
-                            API Endpoint Path
-                          </label>
-                          <div className="flex mt-1">
-                            <span className="inline-flex items-center px-3 text-sm text-gray-500 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">
-                              https://api.automl-platform.com/v1/models/{selectedModel.id}/
-                            </span>
-                            <input
-                              type="text"
-                              id="endpoint"
-                              className="flex-1 block w-full min-w-0 px-3 py-2 border-gray-300 rounded-none rounded-r-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                              value={deploymentConfig.endpoint}
-                              onChange={(e) =>
-                                setDeploymentConfig({
-                                  ...deploymentConfig,
-                                  endpoint: e.target.value,
-                                })
-                              }
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label
-                              htmlFor="minInstances"
-                              className="block text-xs font-medium text-gray-500"
-                            >
-                              Minimum Instances
-                            </label>
-                            <select
-                              id="minInstances"
-                              className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                              value={deploymentConfig.scalingOptions.minInstances}
-                              onChange={(e) =>
-                                setDeploymentConfig({
-                                  ...deploymentConfig,
-                                  scalingOptions: {
-                                    ...deploymentConfig.scalingOptions,
-                                    minInstances: parseInt(e.target.value),
-                                  },
-                                })
-                              }
-                            >
-                              <option value={1}>1</option>
-                              <option value={2}>2</option>
-                              <option value={3}>3</option>
-                              <option value={5}>5</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label
-                              htmlFor="maxInstances"
-                              className="block text-xs font-medium text-gray-500"
-                            >
-                              Maximum Instances
-                            </label>
-                            <select
-                              id="maxInstances"
-                              className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                              value={deploymentConfig.scalingOptions.maxInstances}
-                              onChange={(e) =>
-                                setDeploymentConfig({
-                                  ...deploymentConfig,
-                                  scalingOptions: {
-                                    ...deploymentConfig.scalingOptions,
-                                    maxInstances: parseInt(e.target.value),
-                                  },
-                                })
-                              }
-                            >
-                              <option value={1}>1</option>
-                              <option value={3}>3</option>
-                              <option value={5}>5</option>
-                              <option value={10}>10</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-gray-500">
-                            Authentication
-                          </label>
-                          <div className="mt-2 space-y-2">
-                            <div className="flex items-center">
-                              <input
-                                id="auth-api-key"
-                                name="authentication"
-                                type="radio"
-                                className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
-                                checked={deploymentConfig.authentication === 'api_key'}
-                                onChange={() =>
-                                  setDeploymentConfig({
-                                    ...deploymentConfig,
-                                    authentication: 'api_key',
-                                  })
-                                }
-                              />
-                              <label
-                                htmlFor="auth-api-key"
-                                className="block ml-3 text-sm text-gray-700"
-                              >
-                                API Key
-                              </label>
-                            </div>
-                            <div className="flex items-center">
-                              <input
-                                id="auth-oauth"
-                                name="authentication"
-                                type="radio"
-                                className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
-                                checked={deploymentConfig.authentication === 'oauth'}
-                                onChange={() =>
-                                  setDeploymentConfig({
-                                    ...deploymentConfig,
-                                    authentication: 'oauth',
-                                  })
-                                }
-                              />
-                              <label
-                                htmlFor="auth-oauth"
-                                className="block ml-3 text-sm text-gray-700"
-                              >
-                                OAuth 2.0
-                              </label>
-                            </div>
-                          </div>
-                        </div>
+                    {/* Deployment Mode Toggle */}
+                    <div className="mt-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Deployment Mode
+                      </label>
+                      <div className="flex items-center space-x-4">
+                        <Button
+                          variant={deploymentMode === 'simple' ? 'default' : 'outline'}
+                          onClick={() => setDeploymentMode('simple')}
+                        >
+                          Simple
+                        </Button>
+                        <Button
+                          variant={deploymentMode === 'advanced' ? 'default' : 'outline'}
+                          onClick={() => setDeploymentMode('advanced')}
+                        >
+                          Advanced
+                        </Button>
                       </div>
                     </div>
+
+                    {deploymentMode === 'simple' && (
+                      <div className="mt-6 p-4 bg-blue-50 rounded-md">
+                        <h4 className="text-sm font-medium text-blue-700">Simple Deployment</h4>
+                        <p className="mt-1 text-xs text-blue-600">
+                          Deploy your model with recommended default settings for quick setup.
+                          This includes API key authentication, a standard endpoint path, and auto-scaling with 1 instance.
+                        </p>
+                      </div>
+                    )}
+
+                    {deploymentMode === 'advanced' && (
+                      <>
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700">Deployment Configuration</h4>
+                          <div className="mt-2 space-y-4">
+                            <div>
+                              <label
+                                htmlFor="endpoint"
+                                className="block text-xs font-medium text-gray-500"
+                              >
+                                API Endpoint Path
+                              </label>
+                              <div className="flex mt-1">
+                                <span className="inline-flex items-center px-3 text-sm text-gray-500 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">
+                                  https://api.automl-platform.com/v1/models/{selectedModel.id}/
+                                </span>
+                                <input
+                                  type="text"
+                                  id="endpoint"
+                                  className="flex-1 block w-full min-w-0 px-3 py-2 border-gray-300 rounded-none rounded-r-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  value={deploymentConfig.endpoint}
+                                  onChange={(e) =>
+                                    setDeploymentConfig({
+                                      ...deploymentConfig,
+                                      endpoint: e.target.value,
+                                    })
+                                  }
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label
+                                  htmlFor="minInstances"
+                                  className="block text-xs font-medium text-gray-500"
+                                >
+                                  Minimum Instances
+                                </label>
+                                <select
+                                  id="minInstances"
+                                  className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  value={deploymentConfig.scalingOptions.minInstances}
+                                  onChange={(e) =>
+                                    setDeploymentConfig({
+                                      ...deploymentConfig,
+                                      scalingOptions: {
+                                        ...deploymentConfig.scalingOptions,
+                                        minInstances: parseInt(e.target.value),
+                                      },
+                                    })
+                                  }
+                                >
+                                  <option value={1}>1</option>
+                                  <option value={2}>2</option>
+                                  <option value={3}>3</option>
+                                  <option value={5}>5</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label
+                                  htmlFor="maxInstances"
+                                  className="block text-xs font-medium text-gray-500"
+                                >
+                                  Maximum Instances
+                                </label>
+                                <select
+                                  id="maxInstances"
+                                  className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  value={deploymentConfig.scalingOptions.maxInstances}
+                                  onChange={(e) =>
+                                    setDeploymentConfig({
+                                      ...deploymentConfig,
+                                      scalingOptions: {
+                                        ...deploymentConfig.scalingOptions,
+                                        maxInstances: parseInt(e.target.value),
+                                      },
+                                    })
+                                  }
+                                >
+                                  <option value={1}>1</option>
+                                  <option value={3}>3</option>
+                                  <option value={5}>5</option>
+                                  <option value={10}>10</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500">
+                                Authentication
+                              </label>
+                              <div className="mt-2 space-y-2">
+                                <div className="flex items-center">
+                                  <input
+                                    id="auth-api-key"
+                                    name="authentication"
+                                    type="radio"
+                                    className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                                    checked={deploymentConfig.authentication === 'api_key'}
+                                    onChange={() =>
+                                      setDeploymentConfig({
+                                        ...deploymentConfig,
+                                        authentication: 'api_key',
+                                      })
+                                    }
+                                  />
+                                  <label
+                                    htmlFor="auth-api-key"
+                                    className="block ml-3 text-sm text-gray-700"
+                                  >
+                                    API Key
+                                  </label>
+                                </div>
+                                <div className="flex items-center">
+                                  <input
+                                    id="auth-oauth"
+                                    name="authentication"
+                                    type="radio"
+                                    className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                                    checked={deploymentConfig.authentication === 'oauth'}
+                                    onChange={() =>
+                                      setDeploymentConfig({
+                                        ...deploymentConfig,
+                                        authentication: 'oauth',
+                                      })
+                                    }
+                                  />
+                                  <label
+                                    htmlFor="auth-oauth"
+                                    className="block ml-3 text-sm text-gray-700"
+                                  >
+                                    OAuth 2.0
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-8">
+                          <h4 className="flex items-center text-sm font-medium text-gray-700">
+                            <Globe className="w-4 h-4 mr-2" />
+                            Deployment Summary
+                          </h4>
+                          <div className="grid grid-cols-1 gap-4 mt-2 sm:grid-cols-2">
+                            <div>
+                              <p className="text-xs font-medium text-gray-500">Authentication</p>
+                              <p className="mt-1 text-sm text-gray-900">API Key</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-medium text-gray-500">Scaling</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                {deploymentConfig.scalingOptions.minInstances} to{' '}
+                                {deploymentConfig.scalingOptions.maxInstances} instances
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-medium text-gray-500">Region</p>
+                              <p className="mt-1 text-sm text-gray-900">US East (N. Virginia)</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-medium text-gray-500">Auto-scaling</p>
+                              <p className="mt-1 text-sm text-gray-900">Enabled</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-medium text-gray-500">Estimated Monthly Cost</p>
+                              <p className="mt-1 text-sm text-gray-900">
+                                ${estimatedCost.toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
 
                     <div className="flex justify-end">
                       <Button onClick={handleDeploy} icon={<Rocket className="w-4 h-4" />}>

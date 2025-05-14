@@ -39,7 +39,8 @@ const Dashboard = () => {
         name: 'Data',
         description: 'Prepare your data',
         status: datasets.length > 0 ? 'completed' : 'current',
-        href: '/app/data'
+        href: '/app/data',
+        icon: Database // Added Database icon
       },
       {
         id: 'features',
@@ -212,29 +213,10 @@ const Dashboard = () => {
           ) : (
             <NextStepSuggestion
               title={`Next Step: ${nextStep.name}`}
-              description={
-                nextStep.id === 'data' 
-                  ? "Upload your first dataset to get started" 
-                  : nextStep.id === 'features'
-                  ? "Engineer features to improve model performance"
-                  : nextStep.id === 'train'
-                  ? "Train your first model using your prepared data"
-                  : nextStep.id === 'deploy'
-                  ? "Deploy your trained model to production"
-                  : "Monitor your deployed model's performance"
-              }
+              description={nextStep.id === 'data' ? nextStep.description : ''}
               href={nextStep.href}
-              icon={
-                nextStep.id === 'data' 
-                  ? Database 
-                  : nextStep.id === 'features'
-                  ? Wand2
-                  : nextStep.id === 'train'
-                  ? Layers
-                  : nextStep.id === 'deploy'
-                  ? Rocket
-                  : Activity
-              }
+              icon={nextStep.icon} // Pass nextStep.icon directly
+              className="next-step-highlight"
             />
           )}
         </div>
@@ -313,7 +295,7 @@ const Dashboard = () => {
       <div className="grid gap-6 mt-8 lg:grid-cols-3">
         <Card
           title="Quick Actions"
-          className="lg:col-span-1 transition-all hover:shadow-lg dark:bg-gray-800 quick-actions"
+          className="lg:col-span-2 transition-all hover:shadow-lg dark:bg-gray-800 card-accent-indigo"
         >
           <div className="flex flex-col space-y-3">
             <Button
@@ -420,7 +402,7 @@ const Dashboard = () => {
 
         <Card
           title="AI Assistant"
-          className="lg:col-span-1 transition-all hover:shadow-lg dark:bg-gray-800"
+          className="lg:col-span-1 transition-all dark:bg-gray-800 card-interactive"
         >
           <div className="flex items-center mb-4">
             <MessageSquare className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mr-2" />
