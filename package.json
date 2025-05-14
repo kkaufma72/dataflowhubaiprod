@@ -16,6 +16,7 @@
     "test:a11y": "vitest run --config vitest.a11y.config.ts"
   },
   "dependencies": {
+    "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
     "@netlify/blobs": "^9.1.1",
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/auth-ui-shared": "^0.1.8",
