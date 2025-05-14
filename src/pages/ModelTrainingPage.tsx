@@ -1,8 +1,32 @@
-// ...existing code...
-import MultiStepProgress from '../components/common/MultiStepProgress'; // Assuming you create this
+import React, { useState } from 'react';
+import Card from '../components/common/Card';
+
+interface MultiStepProgressProps {
+  steps: string[];
+  currentStepName: string;
+  overallProgress: number;
+  currentStepProgress: number;
+}
+
+const MultiStepProgress: React.FC<MultiStepProgressProps> = ({ steps, currentStepName, overallProgress, currentStepProgress }) => {
+  return (
+    <div>
+      <div className="progress-bar">
+        <div className="progress-bar-fill" style={{ width: `${overallProgress}%` }}></div>
+      </div>
+      <ul className="steps-list">
+        {steps.map((step, index) => (
+          <li key={index} className={step === currentStepName ? 'current-step' : ''}>
+            {step}
+          </li>
+        ))}
+      </ul>
+      <p>Current Step Progress: {currentStepProgress}%</p>
+    </div>
+  );
+};
 
 const ModelTrainingPage: React.FC = () => {
-  // ...existing code...
   const [trainingProgress, setTrainingProgress] = useState({
     currentStep: 'Data Preprocessing',
     steps: ['Data Preprocessing', 'Feature Selection', 'Model Search', 'Hyperparameter Tuning', 'Final Evaluation'],
@@ -31,4 +55,5 @@ const ModelTrainingPage: React.FC = () => {
     </div>
   );
 };
-// ...existing code...
+
+export default ModelTrainingPage;

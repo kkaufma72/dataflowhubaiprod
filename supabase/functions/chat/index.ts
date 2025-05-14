@@ -53,17 +53,21 @@ Deno.serve(async (req) => {
 
     console.log(`Processing chat request with ${messages.length} messages`);
 
-    // Fetch datasets for context
+    // Fetch datasets from the Supabase database
     const { data: datasets, error: datasetsError } = await supabase
       .from('datasets')
       .select('*');
 
     if (datasetsError) {
-      console.error('Error fetching datasets:', datasetsError);
-      throw new Error('Failed to fetch datasets');
+      console.error('Error fetching datasets:', datasetsError.message);
+      throw new Error('Failed to fetch datasets. Please ensure the datasets table exists and is accessible.');
     }
 
-    console.log(`Retrieved ${datasets?.length || 0} datasets for context`);
+    if (!datasets || datasets.length === 0) {
+      console.warn('No datasets found in the database.');
+    } else {
+      console.log(`Retrieved ${datasets.length} datasets for context`);
+    }
 
     // Create context from datasets
     const datasetContext = datasets?.map(dataset => {

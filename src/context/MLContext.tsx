@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '@supabase/supabase-js';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase, initializeSupabase, checkSupabaseHealth, handleSupabaseError } from '../lib/supabase';
 import { Dataset, MLModel, Project } from '../types';
 import { storage } from '../lib/storage';

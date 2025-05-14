@@ -137,6 +137,20 @@ const DataManagement: React.FC = () => {
     }
   };
 
+  const handleDatasetUpload = async (file) => {
+    try {
+      // ...existing code for file processing and Supabase upload...
+
+      console.log('Dataset uploaded successfully:', {
+        name: datasetName,
+        description: datasetDescription,
+        previewData: previewData,
+      });
+    } catch (error) {
+      console.error('Error uploading dataset:', error.message);
+    }
+  };
+
   const handleCreateVersion = async (description: string) => {
     // Simulate API call to create a new version
     await new Promise(resolve => setTimeout(resolve, 1500));

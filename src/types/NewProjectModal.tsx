@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { X, Folder, Plus } from 'lucide-react';
-import Button from './Button';
-import Card from './Card';
-import { useMLContext } from '../../context/MLContext';
+import Button from '../components/Button'; // Adjusted path to match the correct location
+import { useMLContext } from '../context/MLContext'; // Adjusted path to match the correct location
 import toast from 'react-hot-toast';
 
 interface NewProjectModalProps {

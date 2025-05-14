@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../components/auth/AuthProvider';
+// Removed unused useAuth import
 import { Layers, BarChart2, Database, Clock, ArrowRight, Sparkles, Check, MessageSquare, Activity, Wand2, Rocket, FolderOpen } from 'lucide-react';
-import { Plus } from 'lucide-react';
 import { useMLContext } from '../context/MLContext';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';

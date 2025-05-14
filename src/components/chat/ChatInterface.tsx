@@ -67,7 +67,7 @@ const ChatInterface: React.FC = () => {
     setError(null);
 
     try {
-      // Call the chat edge function directly
+      // Call the backend function with datasets and userId included
       const response = await fetch(`${supabaseUrl}/functions/v1/chat`, {
         method: 'POST',
         headers: {
@@ -76,6 +76,8 @@ const ChatInterface: React.FC = () => {
         },
         body: JSON.stringify({
           messages: messages.concat(userMessage),
+          datasets, // Include datasets in the request
+          userId: 'current-user-id', // Replace with actual user ID logic
         }),
       });
 
