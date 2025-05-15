@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import { server } from './mocks/server';
+import { configureAxe } from 'jest-axe';
 
 // Setup MSW server
 beforeAll(() => server.listen());
@@ -12,13 +13,13 @@ class MockIntersectionObserver {
   readonly root: Element | null = null;
   readonly rootMargin: string = '';
   readonly thresholds: ReadonlyArray<number> = [];
-  
+
   constructor() {
     this.observe = vi.fn();
     this.unobserve = vi.fn();
     this.disconnect = vi.fn();
   }
-  
+
   observe = vi.fn();
   unobserve = vi.fn();
   disconnect = vi.fn();
@@ -34,7 +35,7 @@ class MockResizeObserver {
     this.unobserve = vi.fn();
     this.disconnect = vi.fn();
   }
-  
+
   observe = vi.fn();
   unobserve = vi.fn();
   disconnect = vi.fn();
@@ -94,3 +95,6 @@ console.error = (...args) => {
   }
   originalConsoleError(...args);
 };
+
+// Extend Vitest's expect with jest-axe matchers
+expect.extend(configureAxe());

@@ -10,13 +10,14 @@ import DataProfiler from '../components/data/DataProfiler';
 import DataLineage from '../components/data/DataLineage';
 import DataPreprocessing from '../components/data/DataPreprocessing';
 import { Dataset } from '../types';
-import { Database, Upload, X, Table, Plus, GitBranch, Check, GitMerge, Wand2, BarChart2 } from 'lucide-react';
+import { Database, Upload, X, Table, Plus, GitBranch, Check, GitMerge, Wand2, BarChart2, MessageSquare } from 'lucide-react'; // Import MessageSquare icon
 import Button from '../components/common/Button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../components/auth/AuthProvider';
 import toast from 'react-hot-toast';
 import PageHeader from '../components/common/PageHeader';
 import WorkflowSteps from '../components/workflow/WorkflowSteps';
+import ChatInterface from '../components/chat/ChatInterface'; // Import ChatInterface
 
 // Helper functions moved to module scope
 const isNumeric = (value: any) => {
@@ -49,6 +50,7 @@ const DataManagement: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState<'basic' | 'profile' | false>(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'versioning' | 'quality' | 'lineage' | 'preprocessing' | 'profile'>('overview');
+  const [showChatbot, setShowChatbot] = useState(false); // State for chatbot visibility
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -101,6 +103,7 @@ const DataManagement: React.FC = () => {
     setShowUploader(false);
     setShowConnector(false);
     setActiveTab('overview');
+    setShowChatbot(false); // Hide chatbot when previewing
   };
 
   const handleAnalyze = (dataset: Dataset) => {
@@ -110,6 +113,7 @@ const DataManagement: React.FC = () => {
     setShowUploader(false);
     setShowConnector(false);
     setActiveTab('overview');
+    setShowChatbot(false); // Hide chatbot when analyzing
   };
 
   const handleConnect = (connection: { type: string; name: string; config: Record<string, string> }) => {
@@ -427,6 +431,7 @@ const DataManagement: React.FC = () => {
                 setShowConnector(false);
                 setShowPreview(false);
                 setShowAnalysis(false);
+                setShowChatbot(false); // Hide chatbot
               }}
               icon={<Upload className="w-4 h-4" />}
             >
@@ -439,10 +444,25 @@ const DataManagement: React.FC = () => {
                 setShowUploader(false);
                 setShowPreview(false);
                 setShowAnalysis(false);
+                setShowChatbot(false); // Hide chatbot
               }}
               icon={<Plus className="w-4 h-4" />}
             >
               Add Connection
+            </Button>
+            {/* Chatbot Toggle Button */}
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowChatbot(!showChatbot);
+                setShowUploader(false);
+                setShowConnector(false);
+                setShowPreview(false);
+                setShowAnalysis(false);
+              }}
+              icon={<MessageSquare className="w-4 h-4" />}
+            >
+              {showChatbot ? 'Hide Chat' : 'Show Chat'}
             </Button>
           </div>
         }
@@ -452,6 +472,12 @@ const DataManagement: React.FC = () => {
       <div className="mb-6">
         <WorkflowSteps steps={dataWorkflowSteps} />
       </div>
+
+      {showChatbot && (
+        <div className="mb-8">
+          <ChatInterface />
+        </div>
+      )}
 
       {showUploader && (
         <div className="mb-8">
