@@ -490,7 +490,7 @@ const PreprocessingPipeline: React.FC<PreprocessingPipelineProps> = ({
                       Enable
                     </label>
                   </div>
-                )}
+                </div>
               </div>
               
               {/* Encoding */}
@@ -522,7 +522,7 @@ const PreprocessingPipeline: React.FC<PreprocessingPipelineProps> = ({
                       Enable
                     </label>
                   </div>
-                )}
+                </div>
               </div>
               
               {/* Scaling */}
@@ -553,7 +553,7 @@ const PreprocessingPipeline: React.FC<PreprocessingPipelineProps> = ({
                       Enable
                     </label>
                   </div>
-                )}
+                </div>
               </div>
               
               {/* Feature Selection */}
@@ -585,7 +585,7 @@ const PreprocessingPipeline: React.FC<PreprocessingPipelineProps> = ({
                       Enable
                     </label>
                   </div>
-                )}
+                </div>
               </div>
               
               {/* Dimensionality Reduction */}
@@ -617,7 +617,7 @@ const PreprocessingPipeline: React.FC<PreprocessingPipelineProps> = ({
                       Enable
                     </label>
                   </div>
-                )}
+                </div>
               </div>
             </div>
             
