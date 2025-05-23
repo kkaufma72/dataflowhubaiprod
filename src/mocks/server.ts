@@ -1,4 +1,4 @@
-import { rest } from 'msw';
+import { http } from 'msw'; // Changed from rest to http
 import { setupServer } from 'msw/node';
 import { sampleDatasets } from './data/datasets';
 import { sampleModels } from './data/models';
@@ -6,7 +6,7 @@ import { sampleModels } from './data/models';
 // Define handlers
 export const handlers = [
   // Datasets API
-  rest.get('https://api.dataflowhub.ai/v1/datasets', (req, res, ctx) => {
+  http.get('https://api.dataflowhub.ai/v1/datasets', (req, res, ctx) => { // Changed from rest.get
     return res(
       ctx.status(200),
       ctx.json({
@@ -15,7 +15,7 @@ export const handlers = [
     );
   }),
   
-  rest.get('https://api.dataflowhub.ai/v1/datasets/:id', (req, res, ctx) => {
+  http.get('https://api.dataflowhub.ai/v1/datasets/:id', (req, res, ctx) => { // Changed from rest.get
     const { id } = req.params;
     const dataset = sampleDatasets.find(d => d.id === id);
     
@@ -34,7 +34,7 @@ export const handlers = [
     );
   }),
   
-  rest.post('https://api.dataflowhub.ai/v1/datasets', async (req, res, ctx) => {
+  http.post('https://api.dataflowhub.ai/v1/datasets', async (req, res, ctx) => { // Changed from rest.post
     const { name, description } = await req.json();
     
     return res(
@@ -54,7 +54,7 @@ export const handlers = [
   }),
   
   // Models API
-  rest.get('https://api.dataflowhub.ai/v1/models', (req, res, ctx) => {
+  http.get('https://api.dataflowhub.ai/v1/models', (req, res, ctx) => { // Changed from rest.get
     const status = req.url.searchParams.get('status');
     
     let filteredModels = sampleModels;
@@ -70,7 +70,7 @@ export const handlers = [
     );
   }),
   
-  rest.get('https://api.dataflowhub.ai/v1/models/:id', (req, res, ctx) => {
+  http.get('https://api.dataflowhub.ai/v1/models/:id', (req, res, ctx) => { // Changed from rest.get
     const { id } = req.params;
     const model = sampleModels.find(m => m.id === id);
     
@@ -89,7 +89,7 @@ export const handlers = [
     );
   }),
   
-  rest.post('https://api.dataflowhub.ai/v1/models/predict', async (req, res, ctx) => {
+  http.post('https://api.dataflowhub.ai/v1/models/predict', async (req, res, ctx) => { // Changed from rest.post
     const { model_id, data } = await req.json();
     
     // Simulate prediction
@@ -105,7 +105,7 @@ export const handlers = [
   }),
   
   // Training API
-  rest.post('https://api.dataflowhub.ai/v1/training', async (req, res, ctx) => {
+  http.post('https://api.dataflowhub.ai/v1/training', async (req, res, ctx) => { // Changed from rest.post
     const { dataset_id, target_variable, model_type, algorithms } = await req.json();
     
     return res(
@@ -123,7 +123,7 @@ export const handlers = [
   }),
   
   // Deployment API
-  rest.post('https://api.dataflowhub.ai/v1/deployments', async (req, res, ctx) => {
+  http.post('https://api.dataflowhub.ai/v1/deployments', async (req, res, ctx) => { // Changed from rest.post
     const { model_id, config } = await req.json();
     
     return res(
@@ -139,7 +139,7 @@ export const handlers = [
   }),
   
   // Monitoring API
-  rest.get('https://api.dataflowhub.ai/v1/monitoring/:model_id', (req, res, ctx) => {
+  http.get('https://api.dataflowhub.ai/v1/monitoring/:model_id', (req, res, ctx) => { // Changed from rest.get
     const { model_id } = req.params;
     
     return res(

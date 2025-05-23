@@ -8,74 +8,84 @@ const findDatasetByName = (name: string, datasets: Dataset[]): Dataset | undefin
 // This service will contain logic to process user questions
 // and query the loaded datasets to generate answers.
 
-export const answerQuestionAboutDatasets = (question: string, datasets: Dataset[]): string => {
-  const lowerCaseQuestion = question.toLowerCase();
+export const handleDataChatQuery = (question: string, datasets: Dataset[]): string => {
+  const lowerCaseQuestion = question.toLowerCase().trim();
 
   if (!datasets || datasets.length === 0) {
-    return "I don't have any datasets loaded to answer your question about.";
+    return 'No datasets are currently loaded.';
   }
 
-  // Question about the number of datasets
   if (lowerCaseQuestion.includes('how many datasets') || lowerCaseQuestion.includes('number of datasets')) {
-    return `You currently have ${datasets.length} dataset${datasets.length === 1 ? '' : 's'} loaded.`;
+    return `You have ${datasets.length} dataset${datasets.length === 1 ? '' : 's'} loaded.`;
   }
 
-  // Question asking to list datasets
   if (lowerCaseQuestion.includes('list datasets') || lowerCaseQuestion.includes('show datasets') || (lowerCaseQuestion.includes('what datasets') && lowerCaseQuestion.includes('loaded'))) {
     const datasetNames = datasets.map(d => d.name).join(', ');
-    return `You currently have the following datasets loaded: ${datasetNames}.`;
+    return `Your loaded datasets are: ${datasetNames}.`;
   }
 
-  // --- Enhanced Logic for Specific Dataset Questions ---
-
-  // Try to identify a specific dataset mentioned in the question
   let targetDataset: Dataset | undefined = undefined;
-  for (const dataset of datasets) {
-    if (lowerCaseQuestion.includes(dataset.name.toLowerCase())) {
-      targetDataset = dataset;
-      break; // Found a likely target dataset
+  
+  const matchingDatasetsByName = datasets.filter(ds => lowerCaseQuestion.includes(ds.name.toLowerCase()));
+
+  if (matchingDatasetsByName.length > 1) {
+    return `I found mentions of multiple datasets: ${matchingDatasetsByName.map(d => d.name).join(', ')}. Could you please focus on one or clarify your question?`;
+  }
+  if (matchingDatasetsByName.length === 1) {
+    targetDataset = matchingDatasetsByName[0];
+  }
+
+  if (!targetDataset) {
+    const parts = lowerCaseQuestion.split(' ');
+    for (let i = 0; i < parts.length; i++) {
+        let potentialNamePhrase = '';
+        for (let j = i; j < parts.length; j++) {
+            potentialNamePhrase = parts.slice(i, j + 1).join(' ');
+            const matchedDs = datasets.find(ds => ds.name.toLowerCase() === potentialNamePhrase);
+            if (matchedDs) {
+                targetDataset = matchedDs;
+                break; 
+            }
+        }
+        if (targetDataset) break;
     }
   }
 
   if (targetDataset) {
-    // Question about a specific dataset's details
+    const datasetDisplayName = targetDataset.name;
+
     if (lowerCaseQuestion.includes('rows') || lowerCaseQuestion.includes('number of rows')) {
-      return `${targetDataset.name} has ${targetDataset.rows?.toLocaleString() || 'an unknown number of'} rows.`;
+      return `${datasetDisplayName} has ${targetDataset.metadata?.rowCount?.toLocaleString() || 'an unknown number of'} rows.`;
     }
 
     if (lowerCaseQuestion.includes('columns') || lowerCaseQuestion.includes('number of columns') || lowerCaseQuestion.includes('fields')) {
-       const columnCount = targetDataset.columns || (targetDataset.previewData?.columns.length ?? 'an unknown number of');
-      return `${targetDataset.name} has ${columnCount} column${columnCount === 1 ? '' : 's'}.`;
+      const columnCount = targetDataset.metadata?.columns?.length ?? 'an unknown number of';
+      return `${datasetDisplayName} has ${columnCount} column${typeof columnCount === 'number' && columnCount === 1 ? '' : 's'}.`;
     }
 
-    if (lowerCaseQuestion.includes('column names') || lowerCaseQuestion.includes('fields in')) {
-      if (targetDataset.previewData?.columns && targetDataset.previewData.columns.length > 0) {
-        const columnNames = targetDataset.previewData.columns.join(', ');
-        return `The columns in ${targetDataset.name} are: ${columnNames}.`;
+    if (lowerCaseQuestion.includes('column names') || lowerCaseQuestion.includes('what are the columns') || lowerCaseQuestion.includes('list columns')) {
+      if (targetDataset.metadata?.columns && targetDataset.metadata.columns.length > 0) {
+        const columnNames = targetDataset.metadata.columns.join(', ');
+        return `${datasetDisplayName} has the following columns: ${columnNames}.`;
       } else {
-        return `I don't have the column names readily available for ${targetDataset.name}.`;
+        return `I don't have the column names readily available for ${datasetDisplayName}.`;
       }
     }
 
-     if (lowerCaseQuestion.includes('file type')) {
-        return `The file type for ${targetDataset.name} is ${targetDataset.fileType.toUpperCase()}.`;
-     }
+    if (lowerCaseQuestion.includes('file type') || lowerCaseQuestion.includes('type of file') || lowerCaseQuestion.includes('format')) {
+      return `${datasetDisplayName} is of type ${targetDataset.metadata?.type || 'unknown'}.`;
+    }
 
-     if (lowerCaseQuestion.includes('file size')) {
-         return `The file size for ${targetDataset.name} is ${targetDataset.fileSize || 'unknown'}.`;
-     }
+    if (lowerCaseQuestion.includes('size of') || lowerCaseQuestion.includes('file size')) {
+      return `${datasetDisplayName} is ${targetDataset.metadata?.size?.toLocaleString() || 'unknown'} bytes.`;
+    }
 
-    // If a dataset is mentioned but the question is unclear
-    return `You mentioned the ${targetDataset.name} dataset. What would you like to know about it? You can ask about its number of rows, columns, or column names.`;
+    return `Okay, you mentioned ${datasetDisplayName}. What would you like to know about it? You can ask about its rows, columns, type, size, or column names.`;
   }
-
-  // Basic example: Just list the available datasets if the user asks a general question about data/datasets
+  
   if (lowerCaseQuestion.includes('dataset') || lowerCaseQuestion.includes('data')) {
-    const datasetNames = datasets.map(d => d.name).join(', ');
-    return `You currently have the following datasets loaded: ${datasetNames}. What specifically would you like to know about them?`;
+    return 'You can load various types of datasets like CSV, JSON, etc. How can I help you with your datasets?';
   }
 
-
-  // Default response if the question doesn't match any known patterns
-  return "I can answer questions about your loaded datasets, but I need more specific information. What would you like to know? For example, you can ask "How many datasets do I have?" or "Tell me about the [dataset name] dataset."";
+  return 'I am designed to answer questions about your datasets. How can I help with that?';
 };

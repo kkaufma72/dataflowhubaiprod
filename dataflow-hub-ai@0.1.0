@@ -1,0 +1,13 @@
+dev is not installed, but available in package bitmagnet, press [Enter] to run it, Ctrl+C to cancel.NAME:
+   bitmagnet v0.8.0 - A new cli application
+
+USAGE:
+   bitmagnet v0.8.0 [global options] command [command options] 
+
+COMMANDS:
+   gorm     
+   migrate  
+   help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --help, -h  show help

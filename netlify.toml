@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "npm test && npm run test:e2e && npm run test:a11y && npm run build"
   publish = "dist"
   functions = "supabase/functions"
 

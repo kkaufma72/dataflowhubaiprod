@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import { server } from './mocks/server';
-import { configureAxe } from 'jest-axe';
+import { toHaveNoViolations } from 'jest-axe'; // Changed this import
 
 // Setup MSW server
 beforeAll(() => server.listen());
@@ -97,4 +97,4 @@ console.error = (...args) => {
 };
 
 // Extend Vitest's expect with jest-axe matchers
-expect.extend(configureAxe());
+expect.extend(toHaveNoViolations); // Changed this line

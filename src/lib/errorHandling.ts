@@ -6,93 +6,96 @@ export interface ApiError {
   details?: any;
 }
 
+const simplifyErrorMessage = (message: string): string => {
+  const normalizedMessage = message.replace(/\s+/g, ' ').trim().toLowerCase();
+  const timeoutKeyword = 'timeout';
+
+  // Attempting with indexOf as a last resort for the timeout check
+  if (normalizedMessage.includes('failed to fetch')) {
+    return 'Connection error. Please check your internet connection.';
+  }
+  if (normalizedMessage.includes('networkerror') || normalizedMessage.includes('network error')) {
+    return 'Network error. Please try again later.';
+  }
+  // Using indexOf instead of includes for the timeout check
+  if (normalizedMessage.indexOf(timeoutKeyword) !== -1) {
+    return 'Request timed out. Please try again.';
+  }
+  if (message.length > 100) {
+    return message.substring(0, 100) + '...';
+  }
+  return message;
+};
+
 export const handleApiError = (error: unknown, fallbackMessage = 'An unexpected error occurred'): ApiError => {
   console.error('API Error:', error);
   
-  // Keep error messages concise and user-friendly
-  let errorMessage = fallbackMessage;
-  let errorStatus: number | undefined = undefined;
-  let errorDetails: any = undefined;
+  let processedMessage = fallbackMessage;
+  let processedStatus: number | undefined = undefined;
+  let processedDetails: any = undefined;
   
   if (error instanceof Error) {
-    // Simplify error messages for better UX
-    errorMessage = simplifyErrorMessage(error.message);
-  }
-  
-  if (error && typeof error === 'object') {
+    processedMessage = simplifyErrorMessage(error.message);
+    if (typeof error === 'object' && error !== null) {
+      if ('status' in error && typeof (error as any).status === 'number') {
+        processedStatus = (error as any).status;
+      }
+      if ('details' in error) {
+        processedDetails = (error as any).details;
+      }
+    }
+  } else if (error && typeof error === 'object') {
     if ('message' in error && typeof error.message === 'string') {
-      errorMessage = simplifyErrorMessage(error.message);
-    }
-    
+      processedMessage = simplifyErrorMessage(error.message);
+    } 
     if ('status' in error && typeof error.status === 'number') {
-      errorStatus = error.status;
+      processedStatus = error.status;
     }
-    
     if ('details' in error) {
-      errorDetails = error.details;
+      processedDetails = error.details;
     }
-  }
+  } else if (typeof error === 'string') {
+    processedMessage = simplifyErrorMessage(error);
+  } 
   
-  // Show toast notification for the error
-  toast.error(errorMessage);
+  toast.error(processedMessage);
   
   return {
-    status: errorStatus,
-    message: errorMessage,
-    details: errorDetails
+    status: processedStatus,
+    message: processedMessage,
+    details: processedDetails
   };
-};
-
-// Helper function to simplify error messages
-const simplifyErrorMessage = (message: string): string => {
-  // Remove technical details and keep only user-friendly parts
-  if (message.includes('Failed to fetch')) {
-    return 'Connection error. Please check your internet connection.';
-  }
-  
-  if (message.includes('NetworkError')) {
-    return 'Network error. Please try again later.';
-  }
-  
-  if (message.includes('timeout')) {
-    return 'Request timed out. Please try again.';
-  }
-  
-  if (message.length > 100) {
-    // Truncate very long messages
-    return message.substring(0, 100) + '...';
-  }
-  
-  return message;
 };
 
 export const isNetworkError = (error: unknown): boolean => {
   if (error instanceof Error) {
+    const lowerMessage = error.message.toLowerCase();
     return (
-      error.message.includes('Failed to fetch') ||
-      error.message.includes('Network request failed') ||
-      error.message.includes('Network Error') ||
-      error.message.includes('The Internet connection appears to be offline')
+      lowerMessage.includes('failed to fetch') ||
+      lowerMessage.includes('network request failed') ||
+      lowerMessage.includes('network error') ||
+      lowerMessage.includes('the internet connection appears to be offline')
     );
   }
   return false;
 };
 
 export const isAuthError = (error: unknown): boolean => {
-  if (error && typeof error === 'object' && 'status' in error) {
+  if (error && typeof error === 'object' && 'status' in error && typeof error.status === 'number') {
     return error.status === 401 || error.status === 403;
   }
   return false;
 };
 
-export const getErrorMessage = (error: unknown): string => {
+export const getErrorMessage = (error: unknown, fallback = 'An unexpected error occurred'): string => {
   if (error instanceof Error) {
     return error.message;
   }
-  
   if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
     return error.message;
   }
-  
-  return 'An unexpected error occurred';
+  if (typeof error === 'string') {
+    return error;
+  }
+  return fallback;
 };

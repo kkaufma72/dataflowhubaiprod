@@ -4,6 +4,8 @@ import { useMLContext } from '../../context/MLContext';
 import Button from '../common/Button';
 import Card from '../common/Card';
 import toast from 'react-hot-toast';
+import { supabase } from '../../lib/supabase'; // Import supabase client
+import { v4 as uuidv4 } from 'uuid'; // Assuming uuid is installed for unique filenames
 
 const DataUploader: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
@@ -15,6 +17,9 @@ const DataUploader: React.FC = () => {
   const { addDataset, currentProject } = useMLContext();
 
   const MAX_NAME_LENGTH = 100;
+  const MAX_FILE_SIZE_MB = 100; // Maximum file size in MB
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+  const SUPABASE_STORAGE_BUCKET = 'datasets'; // Define your Supabase storage bucket name
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -47,7 +52,13 @@ const DataUploader: React.FC = () => {
   const validateAndSetFile = (file: File) => {
     const validTypes = ['text/csv', 'application/vnd.ms-excel', 'application/json', 'text/css'];
     const fileType = file.type || `text/${file.name.split('.').pop()?.toLowerCase()}`;
-    
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setError(`File size exceeds the maximum limit of ${MAX_FILE_SIZE_MB} MB.`);
+      setFile(null);
+      return;
+    }
+
     if (!validTypes.includes(fileType)) {
       setError('Please upload a CSV, Excel, JSON, or CSS file');
       setFile(null);
@@ -58,44 +69,19 @@ const DataUploader: React.FC = () => {
 
   const truncateFileName = (name: string): string => {
     if (name.length <= MAX_NAME_LENGTH) return name;
-    
+
     const extension = name.split('.').pop() || '';
     const nameWithoutExt = name.slice(0, -(extension.length + 1));
     const maxBaseLength = MAX_NAME_LENGTH - (extension.length + 4); // 4 accounts for '...' and '.'
-    
+
     return `${nameWithoutExt.slice(0, maxBaseLength)}...${extension}`;
   };
 
-  const parseFileContent = async (content: string, fileType: string) => {
-    if (fileType === 'text/csv') {
-      const lines = content.trim().split('\n');
-      const headers = lines[0].split(',').map(h => h.trim());
-      const rows = lines.slice(1).map(line => line.split(',').map(cell => cell.trim()));
-      return { columns: headers, rows };
-    } else if (fileType === 'application/json') {
-      const data = JSON.parse(content);
-      if (Array.isArray(data)) {
-        const headers = Object.keys(data[0] || {});
-        const rows = data.map(item => headers.map(header => String(item[header] || '')));
-        return { columns: headers, rows };
-      }
-    } else if (fileType === 'text/css') {
-      const rules = content.split('}')
-        .filter(block => block.trim())
-        .map(block => {
-          const [selector = '', properties = ''] = block.split('{');
-          return [
-            selector.trim(),
-            properties.trim(),
-            block.split('\n')[0].trim()
-          ];
-        });
-      return {
-        columns: ['Selector', 'Properties', 'Line'],
-        rows: rules
-      };
-    }
-    return { columns: [], rows: [] };
+  // This parsing logic will likely be moved to a backend function for scalability
+  const parseFileContent = async (file: File) => {
+     // Placeholder for backend parsing logic
+    console.log(`Parsing file ${file.name} on the backend...`);
+    return { columns: [], rows: [] }; // Return empty data for now
   };
 
   const handleUpload = async () => {
@@ -105,19 +91,33 @@ const DataUploader: React.FC = () => {
     setUploadProgress(0);
     setError(null);
 
+    const fileExtension = file.name.split('.').pop();
+    const uniqueFileName = `${uuidv4()}.${fileExtension}`;
+    const filePath = `${currentProject.id}/${uniqueFileName}`;
+
     try {
-      // Read file content
-      const fileContent = await file.text();
-      const fileType = file.type || `text/${file.name.split('.').pop()?.toLowerCase()}`;
-      
-      // Parse content based on file type
-      const previewData = await parseFileContent(fileContent, fileType);
-      
-      if (!previewData.columns.length) {
-        throw new Error('Unable to parse file content');
+      const { data, error: uploadError } = await supabase.storage
+        .from(SUPABASE_STORAGE_BUCKET)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+          // Add upload progress listener if Supabase Storage SDK supports it
+          // onProgress: (event) => {
+          //   setUploadProgress(event.loaded / event.total * 100);
+          // }
+        });
+
+      if (uploadError) {
+        throw uploadError;
       }
 
-      // Simulate upload progress
+      // File uploaded successfully, now trigger backend processing
+      console.log('File uploaded successfully to Supabase Storage:', data);
+
+      // TODO: Trigger a Supabase Function or backend process here
+      // Pass the file path or public URL to the backend function
+
+      // Simulate backend processing time
       const interval = setInterval(() => {
         setUploadProgress((prev) => {
           const newProgress = prev + Math.random() * 10;
@@ -125,36 +125,25 @@ const DataUploader: React.FC = () => {
         });
       }, 200);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate backend processing delay
 
       clearInterval(interval);
       setUploadProgress(100);
 
-      const fileSize = (file.size / 1024).toFixed(1) + ' KB';
-      
-      const newDataset = {
-        id: `dataset-${Date.now()}`,
-        name: truncateFileName(file.name),
-        description: `Uploaded ${fileType.split('/')[1]} file`,
-        rows: previewData.rows.length,
-        columns: previewData.columns.length,
-        dateUploaded: new Date().toISOString(),
-        fileType: file.name.split('.').pop() || '',
-        fileSize,
-        projectId: currentProject.id,
-        previewData
-      };
+      // After backend processing is complete and dataset info is available:
+      // const newDataset = { ... }; // Get dataset info from backend response
+      // await addDataset(newDataset);
 
-      await addDataset(newDataset);
       setUploading(false);
       setFile(null);
       setUploadProgress(0);
-      toast.success(`Dataset "${file.name}" uploaded successfully`);
+      toast.success(`File "${file.name}" uploaded for processing`);
     } catch (error) {
-      clearInterval(interval);
+      // clearInterval(interval); // Clear interval if it was started
+      console.error('Upload error:', error);
       setError(error instanceof Error ? error.message : 'Failed to upload file. Please try again.');
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -183,14 +172,6 @@ const DataUploader: React.FC = () => {
             <p className="mt-1 text-xs text-gray-500">
               Supported formats: CSV, Excel, JSON, CSS (max 100MB)
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-4"
-              onClick={triggerFileInput}
-            >
-              Select file
-            </Button>
             <input
               ref={fileInputRef}
               type="file"

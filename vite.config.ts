@@ -4,8 +4,8 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 3002,
-    strictPort: true, // Force the specified port
+    port: 3004,
+    strictPort: false, // Allow Vite to find the next available port
     host: true, // Listen on all addresses
     watch: {
       usePolling: true,
@@ -13,7 +13,7 @@ export default defineConfig({
       ignored: ['**/node_modules/**', '**/.git/**']
     },
     hmr: {
-      timeout: 180000, // Increased timeout for better reliability
+      timeout: 300000, // Increased timeout for better reliability
       clientPort: 3002 // Ensure client and server ports match
     },
     fs: {
@@ -45,6 +45,8 @@ export default defineConfig({
     }
   },
   test: {
-    environment: 'jsdom'
+    environment: 'jsdom',
+    setupFiles: ['./src/setupTests.ts'],
+    globals: true, // Added this line
   }
 });

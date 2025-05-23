@@ -1,5 +1,6 @@
+import React from 'react'; // Ensure React is imported
 import { render } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest'; // Ensure vi is imported
 import { axe } from 'jest-axe';
 import HelpTooltip from '../../components/common/HelpTooltip';
 

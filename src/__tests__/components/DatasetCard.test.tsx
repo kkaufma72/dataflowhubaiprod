@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import DatasetCard from '../../components/data/DatasetCard';
 import { Dataset } from '../../types';
@@ -19,6 +19,11 @@ describe('DatasetCard', () => {
   const mockOnPreview = vi.fn();
   const mockOnAnalyze = vi.fn();
 
+  beforeEach(() => {
+    mockOnPreview.mockClear();
+    mockOnAnalyze.mockClear();
+  });
+
   it('renders dataset information correctly', () => {
     render(
       <DatasetCard 
@@ -30,11 +35,11 @@ describe('DatasetCard', () => {
 
     expect(screen.getByText('Test Dataset')).toBeInTheDocument();
     expect(screen.getByText('A test dataset for unit testing')).toBeInTheDocument();
-    expect(screen.getByText('1,000')).toBeInTheDocument();
-    expect(screen.getByText('10')).toBeInTheDocument();
-    expect(screen.getByText('CSV')).toBeInTheDocument();
+    expect(screen.getByText('1,000')).toBeInTheDocument(); // Assumes toLocaleString() for rows
+    expect(screen.getByText('10')).toBeInTheDocument(); // Assumes columns are rendered directly
+    expect(screen.getByText('CSV')).toBeInTheDocument(); // Assumes fileType is uppercased
     expect(screen.getByText('2.5 MB')).toBeInTheDocument();
-    expect(screen.getByText(/Uploaded on/)).toBeInTheDocument();
+    expect(screen.getByText(/Uploaded on Jan 1, 2023/)).toBeInTheDocument(); // More specific date check
   });
 
   it('calls onPreview when Preview button is clicked', () => {
@@ -67,7 +72,7 @@ describe('DatasetCard', () => {
     const minimalDataset: Dataset = {
       id: 'minimal-dataset',
       name: 'Minimal Dataset',
-      description: '',
+      description: '', // Empty description is fine
       rows: null as any,
       columns: null as any,
       dateUploaded: null as any,
@@ -85,7 +90,24 @@ describe('DatasetCard', () => {
     );
 
     expect(screen.getByText('Minimal Dataset')).toBeInTheDocument();
-    expect(screen.getByText('N/A')).toBeInTheDocument(); // For rows or columns
+    
+    const rowsLabel = screen.getByText('Rows');
+    const rowsValueContainer = rowsLabel.parentElement!;
+    expect(within(rowsValueContainer).getByText('N/A')).toBeInTheDocument();
+
+    const colsLabel = screen.getByText('Columns');
+    const colsValueContainer = colsLabel.parentElement!;
+    expect(within(colsValueContainer).getByText('N/A')).toBeInTheDocument();
+
+    const formatLabel = screen.getByText('Format');
+    const formatValueContainer = formatLabel.parentElement!;
+    expect(within(formatValueContainer).getByText('N/A')).toBeInTheDocument();
+    
+    const sizeLabel = screen.getByText('Size');
+    const sizeValueContainer = sizeLabel.parentElement!;
+    expect(within(sizeValueContainer).getByText('N/A')).toBeInTheDocument();
+
+    expect(screen.getByText(/Uploaded on N\/A/)).toBeInTheDocument();
   });
 
   it('formats date correctly', () => {
@@ -96,11 +118,7 @@ describe('DatasetCard', () => {
         onAnalyze={mockOnAnalyze} 
       />
     );
-
-    // Check that the date is formatted as expected
-    // The exact format may depend on the user's locale, so we check for parts of the date
-    const dateElement = screen.getByText(/Uploaded on/);
-    expect(dateElement).toHaveTextContent(/Jan/); // Month
-    expect(dateElement).toHaveTextContent(/2023/); // Year
+    // Check for specific parts of the formatted date
+    expect(screen.getByText(/Uploaded on Jan 1, 2023/)).toBeInTheDocument();
   });
 });

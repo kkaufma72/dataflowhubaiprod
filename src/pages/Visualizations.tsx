@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import InteractiveChart, { ChartDashboard, D3Visualization } from '../components/visualizations/InteractiveCharts';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
-import { BarChart2, PieChart, LineChart, ScatterChart as ScatterPlot, RefreshCw, Download, Share, Filter, Sliders, Plus } from 'lucide-react';
+import { BarChart2, PieChart, LineChart, ScatterChart as ScatterPlot, RefreshCw, Download, Share, Filter, Sliders, Plus, Twitter, Linkedin } from 'lucide-react';
 import { useMLContext } from '../context/MLContext';
 import toast from 'react-hot-toast';
 
@@ -13,28 +13,57 @@ const Visualizations: React.FC = () => {
   const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  
+
+  // Helper function to generate share URL for Twitter
+  const generateTwitterShareUrl = (title: string, url: string): string => {
+    const text = encodeURIComponent(`Check out this ${title} visualization generated on our platform!`);
+    const shareUrl = encodeURIComponent(url);
+    return `https://twitter.com/intent/tweet?text=${text}&url=${shareUrl}`;
+  };
+
+  // Helper function to generate share URL for LinkedIn
+  const generateLinkedInShareUrl = (title: string, url: string, summary: string = ''): string => {
+     const shareUrl = encodeURIComponent(url);
+     const shareTitle = encodeURIComponent(title);
+     const shareSummary = encodeURIComponent(summary);
+     // LinkedIn share URL documentation: https://docs.microsoft.com/en-us/linkedin/share/linkedin-share
+    return `https://www.linkedin.com/shareArticle?mini=true&url=${shareUrl}&title=${shareTitle}&summary=${shareSummary}&source=${encodeURIComponent(window.location.origin)}`;
+  };
+
+  const handleShare = (platform: 'twitter' | 'linkedin', title: string, url: string, summary?: string) => {
+    let shareLink = '';
+    if (platform === 'twitter') {
+      shareLink = generateTwitterShareUrl(title, url);
+    } else if (platform === 'linkedin') {
+      shareLink = generateLinkedInShareUrl(title, url, summary);
+    }
+
+    if (shareLink) {
+      window.open(shareLink, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   // Generate sample data based on selected dataset
   const generateChartData = () => {
     setIsLoading(true);
-    
+
     // Simulate data loading
     setTimeout(() => {
       setIsLoading(false);
       toast.success('Data refreshed');
     }, 1000);
   };
-  
+
   useEffect(() => {
     if (datasets.length > 0 && !selectedDataset) {
       setSelectedDataset(datasets[0].id);
     }
-    
+
     if (models.length > 0 && !selectedModel) {
       setSelectedModel(models[0].id);
     }
   }, [datasets, models, selectedDataset, selectedModel]);
-  
+
   // Sample data for charts
   const barChartData = {
     labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
@@ -51,7 +80,7 @@ const Visualizations: React.FC = () => {
       },
     ],
   };
-  
+
   const lineChartData = {
     labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
     datasets: [
@@ -73,7 +102,7 @@ const Visualizations: React.FC = () => {
       },
     ],
   };
-  
+
   const pieChartData = {
     labels: ['Random Forest', 'XGBoost', 'Linear Regression', 'Neural Network', 'SVM'],
     datasets: [
@@ -91,7 +120,7 @@ const Visualizations: React.FC = () => {
       },
     ],
   };
-  
+
   const scatterChartData = {
     datasets: [
       {
@@ -106,7 +135,7 @@ const Visualizations: React.FC = () => {
       },
     ],
   };
-  
+
   // Sample data for dashboard
   const dashboardCharts = [
     {
@@ -194,7 +223,7 @@ const Visualizations: React.FC = () => {
       },
     },
   ];
-  
+
   // Sample data for D3 visualizations
   const forceDirectedData = {
     nodes: [
@@ -216,7 +245,7 @@ const Visualizations: React.FC = () => {
       { source: 'F', target: 'G', value: 2 },
     ],
   };
-  
+
   const treeData = {
     name: 'Root',
     children: [
@@ -237,8 +266,8 @@ const Visualizations: React.FC = () => {
       },
     ],
   };
-  
-  const heatmapData = Array.from({ length: 10 }, (_, i) => 
+
+  const heatmapData = Array.from({ length: 10 }, (_, i) =>
     Array.from({ length: 10 }, (_, j) => ({
       x: `X${i+1}`,
       y: `Y${j+1}`,
@@ -301,7 +330,7 @@ const Visualizations: React.FC = () => {
                 ))}
               </select>
             </div>
-            
+
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 Model
@@ -317,7 +346,7 @@ const Visualizations: React.FC = () => {
                 ))}
               </select>
             </div>
-            
+
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 Time Range
@@ -334,7 +363,7 @@ const Visualizations: React.FC = () => {
               </select>
             </div>
           </div>
-          
+
           <div className="flex justify-end mt-4">
             <Button
               variant="outline"
@@ -403,8 +432,9 @@ const Visualizations: React.FC = () => {
             description="Relative importance of features in the model"
             isLoading={isLoading}
             onRefresh={generateChartData}
+            // TODO: Add share buttons for individual charts within InteractiveChart.tsx
           />
-          
+
           <InteractiveChart
             type="line"
             data={lineChartData}
@@ -412,8 +442,9 @@ const Visualizations: React.FC = () => {
             description="Accuracy and loss over training epochs"
             isLoading={isLoading}
             onRefresh={generateChartData}
+            // TODO: Add share buttons for individual charts within InteractiveChart.tsx
           />
-          
+
           <InteractiveChart
             type="pie"
             data={pieChartData}
@@ -421,8 +452,9 @@ const Visualizations: React.FC = () => {
             description="Distribution of model types in use"
             isLoading={isLoading}
             onRefresh={generateChartData}
+            // TODO: Add share buttons for individual charts within InteractiveChart.tsx
           />
-          
+
           <InteractiveChart
             type="scatter"
             data={scatterChartData}
@@ -430,6 +462,7 @@ const Visualizations: React.FC = () => {
             description="Clustering of data points in feature space"
             isLoading={isLoading}
             onRefresh={generateChartData}
+            // TODO: Add share buttons for individual charts within InteractiveChart.tsx
           />
         </div>
       )}
@@ -440,36 +473,106 @@ const Visualizations: React.FC = () => {
           title="Model Performance Dashboard"
           onRefresh={generateChartData}
         />
+        // TODO: Consider adding a share button for the entire dashboard
       )}
 
       {activeTab === 'advanced' && (
         <div className="space-y-6">
-          <D3Visualization
-            type="force-directed"
-            data={forceDirectedData}
-            title="Model Relationship Graph"
-            description="Force-directed graph showing relationships between model components"
-            width={600}
-            height={400}
-          />
-          
-          <D3Visualization
-            type="tree"
-            data={treeData}
-            title="Decision Tree Visualization"
-            description="Hierarchical visualization of a decision tree model"
-            width={600}
-            height={400}
-          />
-          
-          <D3Visualization
-            type="heatmap"
-            data={heatmapData}
-            title="Correlation Heatmap"
-            description="Heatmap showing correlations between features"
-            width={600}
-            height={400}
-          />
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Model Relationship Graph</h3>
+              <div className="flex space-x-2">
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   icon={<Twitter className="w-4 h-4" />}
+                   onClick={() => handleShare('twitter', 'Model Relationship Graph', window.location.href)}
+                 >
+                   Tweet
+                 </Button>
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   icon={<Linkedin className="w-4 h-4" />}
+                   onClick={() => handleShare('linkedin', 'Model Relationship Graph', window.location.href, 'Check out this model relationship graph!')}
+                 >
+                   Share on LinkedIn
+                 </Button>
+              </div>
+            </div>
+            <D3Visualization
+              type="force-directed"
+              data={forceDirectedData}
+              title="Model Relationship Graph"
+              description="Force-directed graph showing relationships between model components"
+              width={600}
+              height={400}
+            />
+          </Card>
+
+           <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Decision Tree Visualization</h3>
+               <div className="flex space-x-2">
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   icon={<Twitter className="w-4 h-4" />}
+                   onClick={() => handleShare('twitter', 'Decision Tree Visualization', window.location.href)}
+                 >
+                   Tweet
+                 </Button>
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   icon={<Linkedin className="w-4 h-4" />}
+                   onClick={() => handleShare('linkedin', 'Decision Tree Visualization', window.location.href, 'Explore this decision tree visualization!')}
+                 >
+                   Share on LinkedIn
+                 </Button>
+              </div>
+            </div>
+            <D3Visualization
+              type="tree"
+              data={treeData}
+              title="Decision Tree Visualization"
+              description="Hierarchical visualization of a decision tree model"
+              width={600}
+              height={400}
+            />
+          </Card>
+
+           <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
+               <h3 className="text-lg font-semibold text-gray-900">Correlation Heatmap</h3>
+                <div className="flex space-x-2">
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   icon={<Twitter className="w-4 h-4" />}
+                   onClick={() => handleShare('twitter', 'Correlation Heatmap', window.location.href)}
+                 >
+                   Tweet
+                 </Button>
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   icon={<Linkedin className="w-4 h-4" />}
+                   onClick={() => handleShare('linkedin', 'Correlation Heatmap', window.location.href, 'Check out this correlation heatmap!')}
+                 >
+                   Share on LinkedIn
+                 </Button>
+              </div>
+            </div>
+             <D3Visualization
+              type="heatmap"
+              data={heatmapData}
+              title="Correlation Heatmap"
+              description="Heatmap showing correlations between features"
+              width={600}
+              height={400}
+            />
+          </Card>
         </div>
       )}
     </div>
